@@ -8,6 +8,21 @@ import numpy as np
 
 
 def chebyshev_nodes(n: int = 10) -> np.ndarray | None:
+    
+    if not (isinstance(n, (int, np.integer)) and n > 0):
+        return None
+    
+    if n == 1:
+        return np.array([1.0])
+
+    nodes = np.ones(n)
+
+    for k in range(len(nodes)):
+        nodes[k] = np.cos(k * np.pi / (n - 1))
+
+    return nodes
+
+
     """Funkcja generująca wektor węzłów Czebyszewa drugiego rodzaju (n,) 
     i sortująca wynik od najmniejszego do największego węzła.
 
@@ -18,7 +33,7 @@ def chebyshev_nodes(n: int = 10) -> np.ndarray | None:
         (np.ndarray): Wektor węzłów Czebyszewa (n,).
         Jeżeli dane wejściowe są niepoprawne funkcja zwraca `None`.
     """
-    pass
+    
 
 
 def bar_cheb_weights(n: int = 10) -> np.ndarray | None:
@@ -31,7 +46,21 @@ def bar_cheb_weights(n: int = 10) -> np.ndarray | None:
         (np.ndarray): Wektor wag dla węzłów Czebyszewa (n,).
         Jeżeli dane wejściowe są niepoprawne funkcja zwraca `None`.
     """
-    pass
+    if not isinstance(n, (int, np.integer)) or n <= 0:
+        return None
+
+    if n == 1:
+        return np.array([1.0])
+
+    weights = np.ones(n)
+
+    for k in range(n):
+        weights[k] = (-1) ** k
+
+    weights[0] *= 0.5
+    weights[-1] *= 0.5
+
+    return weights
 
 
 def barycentric_inte(
@@ -52,7 +81,31 @@ def barycentric_inte(
         (np.ndarray): Wektor wartości funkcji interpolującej (n,).
         Jeżeli dane wejściowe są niepoprawne funkcja zwraca `None`.
     """
-    pass
+    if not all(isinstance(arr, np.ndarray) for arr in (xi, yi, wi, x)):
+        return None
+
+    if xi.ndim != 1 or yi.ndim != 1 or wi.ndim != 1 or x.ndim != 1:
+        return None
+
+    if len(xi) == 0 or len(xi) != len(yi) or len(xi) != len(wi):
+        return None
+
+
+    result = np.zeros_like(x, dtype=float)
+
+    for j in range(len(x)):
+      
+        diff = x[j] - xi
+        zero_idx = np.where(np.isclose(diff, 0.0))[0]
+
+        if zero_idx.size > 0:
+            result[j] = yi[zero_idx[0]]
+        else:
+            numerator = np.sum(wi * yi / diff)
+            denominator = np.sum(wi / diff)
+            result[j] = numerator / denominator
+
+    return result
 
 
 def L_inf(
@@ -71,4 +124,23 @@ def L_inf(
         (float): Wartość normy L-nieskończoność.
         Jeżeli dane wejściowe są niepoprawne funkcja zwraca `None`.
     """
-    pass
+    if isinstance(xr, (int, float, np.integer, np.floating)) and \
+       isinstance(x,  (int, float, np.integer, np.floating)):
+        return float(abs(xr - x))
+
+ 
+    try:
+        xr_arr = np.asarray(xr, dtype=float)
+        x_arr = np.asarray(x, dtype=float)
+    except Exception:
+        return None
+
+   
+    if xr_arr.shape != x_arr.shape:
+        return None
+
+    if xr_arr.size == 0:
+        return None
+
+    
+    return float(np.max(np.abs(xr_arr - x_arr)))
